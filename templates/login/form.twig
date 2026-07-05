@@ -515,14 +515,10 @@
             }
             var $msgDiv = $('<div>').addClass('login-error-msg').text(msg);
             $errorBox.empty().append($msgDiv).show();
-            $('#btn_refresh_captcha').trigger('click');
-
-            /* Bersihkan error dari phpMyAdmin AJAX handler */
+            /* Tampilkan error 1.5 detik, lalu reload halaman untuk state bersih */
             setTimeout(function() {
-              $('#pma_errors').remove();
-              $('.login .alert-danger').remove();
-              $('div[role="alert"]').remove();
-            }, 200);
+              window.location.reload();
+            }, 1500);
           },
           error: function(xhr, status, err) {
             console.log('[LOGIN] AJAX error:', status, err, 'status:', xhr.status);
@@ -531,10 +527,12 @@
             $('#btn_icon_loading').hide();
             $('#btn_text').text('{% trans "Log in" %}');
             $form.removeClass('login-loading');
-            var msg = 'Terjadi kesalahan. Status: ' + xhr.status;
+            var msg = 'Terjadi kesalahan jaringan. Status: ' + xhr.status;
             var $msgDiv = $('<div>').addClass('login-error-msg').text(msg);
             $errorBox.empty().append($msgDiv).show();
-            $('#btn_refresh_captcha').trigger('click');
+            setTimeout(function() {
+              window.location.reload();
+            }, 1500);
           }
         });
         return false;
