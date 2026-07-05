@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Auth;
 
+use PhpMyAdmin\Captcha\Captcha;
 use PhpMyAdmin\Config;
 use PhpMyAdmin\Core;
 use PhpMyAdmin\LanguageManager;
@@ -169,6 +170,11 @@ class AuthenticationCookie extends AuthenticationPlugin
 
         $configFooter = Config::renderFooter();
 
+        // Generate CAPTCHA
+        $captchaCode = Captcha::generate(6);
+        Captcha::store($captchaCode);
+        $captchaSvg = Captcha::renderImage($captchaCode);
+
         echo $this->template->render('login/form', [
             'login_header' => $loginHeader,
             'is_demo' => $GLOBALS['cfg']['DBG']['demo'],
@@ -194,6 +200,8 @@ class AuthenticationCookie extends AuthenticationPlugin
             'captcha_req' => $GLOBALS['cfg']['CaptchaRequestParam'],
             'captcha_resp' => $GLOBALS['cfg']['CaptchaResponseParam'],
             'captcha_key' => $GLOBALS['cfg']['CaptchaLoginPublicKey'],
+            'captcha_svg' => $captchaSvg,
+            'captcha_token' => Captcha::getToken(),
             'form_params' => $_form_params,
             'errors' => $errors,
             'login_footer' => $loginFooter,
@@ -236,6 +244,48 @@ class AuthenticationCookie extends AuthenticationPlugin
         $GLOBALS['from_cookie'] = false;
 
         if (isset($_POST['pma_username']) && strlen($_POST['pma_username']) > 0) {
+            // Rate limiting: max 5 login attempts per 2 minutes
+            $loginRateKey = 'pma_login_attempts';
+            $loginRateTimeKey = 'pma_login_time';
+            if (! isset($_SESSION[$loginRateTimeKey]) || (time() - $_SESSION[$loginRateTimeKey]) > 120) {
+                $_SESSION[$loginRateTimeKey] = time();
+                $_SESSION[$loginRateKey] = 0;
+            }
+            $_SESSION[$loginRateKey] = ($_SESSION[$loginRateKey] ?? 0) + 1;
+
+            if (($_SESSION[$loginRateKey] ?? 0) > 5) {
+                $msg = __('Terlalu banyak percobaan login. Silakan tunggu 2 menit.');
+                $conn_error = $msg;
+                $this->sendAjaxLoginError($msg);
+                return false;
+            }
+
+            // Sanitize CAPTCHA input: only allow alphanumeric, max 6 chars
+            $captchaInput = preg_replace('/[^A-Za-z0-9]/', '', $_POST['pma_captcha'] ?? '');
+            if (strlen($captchaInput) !== 6) {
+                $conn_error = __('Please enter the CAPTCHA code.');
+                $this->sendAjaxLoginError(__('Please enter the CAPTCHA code.'));
+                return false;
+            }
+
+            // Verify CAPTCHA CSRF token
+            $captchaToken = $_POST['pma_captcha_token'] ?? '';
+            if (! Captcha::verifyToken($captchaToken)) {
+                $conn_error = __('Invalid session. Please refresh the page and try again.');
+                Captcha::destroy();
+                $this->sendAjaxLoginError(__('Invalid session. Please refresh the page and try again.'));
+                return false;
+            }
+
+            if (! Captcha::verify($captchaInput)) {
+                $conn_error = __('Invalid CAPTCHA code. Please try again.');
+                Captcha::destroy();
+                $this->sendAjaxLoginError(__('Invalid CAPTCHA code. Please try again.'));
+                return false;
+            }
+
+            Captcha::destroy();
+
             // Verify Captcha if it is required.
             if (
                 ! empty($GLOBALS['cfg']['CaptchaApi'])
@@ -497,6 +547,20 @@ class AuthenticationCookie extends AuthenticationPlugin
          */
         Util::clearUserCache();
 
+        // Untuk AJAX request, kirim JSON success alih-alih redirect
+        if (! empty($_POST['ajax_request'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => true,
+                'logged_in' => 1,
+                'new_token' => $_SESSION[' PMA_token '] ?? '',
+            ]);
+            if (! defined('TESTSUITE')) {
+                exit;
+            }
+            return;
+        }
+
         ResponseRenderer::getInstance()->disable();
 
         Core::sendHeaderLocation(
@@ -572,6 +636,9 @@ class AuthenticationCookie extends AuthenticationPlugin
         $GLOBALS['config']->removeCookie('pmaAuth-' . $GLOBALS['server']);
 
         $conn_error = $this->getErrorMessage($failure);
+
+        // Handle AJAX login error
+        $this->sendAjaxLoginError($conn_error);
 
         $response = ResponseRenderer::getInstance();
 
@@ -688,5 +755,23 @@ class AuthenticationCookie extends AuthenticationPlugin
         }
 
         parent::logOut();
+    }
+
+    /**
+     * Send AJAX login error response and exit
+     */
+    private function sendAjaxLoginError(string $message): void
+    {
+        if (! empty($_POST['ajax_request'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => false,
+                'logged_in' => 0,
+                'error' => $message,
+            ]);
+            if (! defined('TESTSUITE')) {
+                exit;
+            }
+        }
     }
 }

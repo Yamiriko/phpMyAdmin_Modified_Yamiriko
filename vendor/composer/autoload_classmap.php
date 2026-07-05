@@ -310,6 +310,7 @@ return array(
     'PhpMyAdmin\\Bookmark' => $baseDir . '/libraries/classes/Bookmark.php',
     'PhpMyAdmin\\BrowseForeigners' => $baseDir . '/libraries/classes/BrowseForeigners.php',
     'PhpMyAdmin\\Cache' => $baseDir . '/libraries/classes/Cache.php',
+    'PhpMyAdmin\\Captcha\\Captcha' => $baseDir . '/libraries/classes/Captcha/Captcha.php',
     'PhpMyAdmin\\Charsets' => $baseDir . '/libraries/classes/Charsets.php',
     'PhpMyAdmin\\Charsets\\Charset' => $baseDir . '/libraries/classes/Charsets/Charset.php',
     'PhpMyAdmin\\Charsets\\Collation' => $baseDir . '/libraries/classes/Charsets/Collation.php',

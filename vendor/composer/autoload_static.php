@@ -739,6 +739,7 @@ class ComposerStaticInitd2f78de6ca6cc5a2f720364892092038
         'PhpMyAdmin\\Bookmark' => __DIR__ . '/../..' . '/libraries/classes/Bookmark.php',
         'PhpMyAdmin\\BrowseForeigners' => __DIR__ . '/../..' . '/libraries/classes/BrowseForeigners.php',
         'PhpMyAdmin\\Cache' => __DIR__ . '/../..' . '/libraries/classes/Cache.php',
+        'PhpMyAdmin\\Captcha\\Captcha' => __DIR__ . '/../..' . '/libraries/classes/Captcha/Captcha.php',
         'PhpMyAdmin\\Charsets' => __DIR__ . '/../..' . '/libraries/classes/Charsets.php',
         'PhpMyAdmin\\Charsets\\Charset' => __DIR__ . '/../..' . '/libraries/classes/Charsets/Charset.php',
         'PhpMyAdmin\\Charsets\\Collation' => __DIR__ . '/../..' . '/libraries/classes/Charsets/Collation.php',

@@ -273,12 +273,15 @@ final class Common
          * an ajax request if there is a token mismatch
          */
         if ($response->isAjax() && $request->isPost() && $token_mismatch) {
-            $response->setRequestStatus(false);
-            $response->addJSON(
-                'message',
-                Message::error(__('Error: Token mismatch'))
-            );
-            exit;
+            // Skip token check untuk login form (belum login, belum ada token)
+            if (empty($_POST['pma_username'])) {
+                $response->setRequestStatus(false);
+                $response->addJSON(
+                    'message',
+                    Message::error(__('Error: Token mismatch'))
+                );
+                exit;
+            }
         }
 
         Profiling::check($dbi, $response);

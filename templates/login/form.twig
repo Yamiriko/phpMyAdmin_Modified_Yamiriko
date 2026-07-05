@@ -1,7 +1,11 @@
 {{ login_header|raw }}
 
+{# Load Animate.css + Font Awesome (hanya untuk login page) #}
+<link rel="stylesheet" href="js/vendor/animate/animate.min.css">
+<link rel="stylesheet" href="js/vendor/fontawesome/css/all.min.css">
+
 {% if is_demo %}
-  <div class="card mb-4">
+  <div class="card mb-4 animate__animated animate__fadeInDown">
     <div class="card-header">{% trans 'phpMyAdmin Demo Server' %}</div>
     <div class="card-body">
       {% apply format('<a href="url.php?url=https://demo.phpmyadmin.net/" target="_blank" rel="noopener noreferrer">demo.phpmyadmin.net</a>')|raw %}
@@ -13,7 +17,7 @@
   </div>
 {% endif %}
 
-{{ error_messages|raw }}
+<div id="pma_login_error_box" style="display:none;"></div>
 
 {% if available_languages is not empty %}
   <div class='hide js-show'>
@@ -22,8 +26,6 @@
         <span id="languageSelectLabel">
           {% trans 'Language' %}
           {% if 'Language'|trans != 'Language' %}
-            {# For non-English, display "Language" with emphasis because it's not a proper word
-               in the current language; we show it to help people recognize the dialog #}
             <i lang="en" dir="ltr">(Language)</i>
           {% endif %}
         </span>
@@ -44,25 +46,23 @@
   </div>
 {% endif %}
 
-<form method="post" id="login_form" action="index.php?route=/" name="login_form" class="
-  {{- not is_session_expired ? 'disableAjax hide ' }}js-show"{{ not has_autocomplete ? ' autocomplete="off"' }}>
-  {# Do not generate a "server" hidden field as we want the "server" drop-down to have priority. #}
+<form method="post" id="login_form" action="index.php?route=/" name="login_form" class="disableAjax{{ not has_autocomplete ? ' autocomplete="off"' : '' }}">
   {{ get_hidden_inputs(form_params, '', 0, 'server') }}
   <input type="hidden" name="set_session" value="{{ session_id }}">
   {% if is_session_expired %}
     <input type="hidden" name="session_timedout" value="1">
   {% endif %}
 
-  <div class="card mb-4">
+  <div class="card mb-4 animate__animated animate__fadeInUp">
     <div class="card-header">
-      {% trans 'Log in' %}
+      <i class="fas fa-sign-in-alt"></i> {% trans 'Log in' %}
       {{ show_docu('index') }}
     </div>
     <div class="card-body">
       {% if is_arbitrary_server_allowed %}
-        <div class="row mb-3">
+        <div class="row mb-3 animate__animated animate__fadeInLeft" style="animation-delay:0.1s">
           <label for="serverNameInput" class="col-sm-4 col-form-label" title="{% trans 'You can enter hostname/IP address and port separated by space.' %}">
-            {% trans 'Server:' %}
+            <i class="fas fa-server"></i> {% trans 'Server:' %}
           </label>
           <div class="col-sm-8">
             <input type="text" name="pma_servername" id="serverNameInput" value="{{ default_server }}" class="form-control" title="
@@ -71,28 +71,54 @@
         </div>
       {% endif %}
 
-      <div class="row mb-3">
+      <div class="row mb-3 animate__animated animate__fadeInLeft" style="animation-delay:0.2s">
         <label for="input_username" class="col-sm-4 col-form-label">
-          {% trans 'Username:' %}
+          <i class="fas fa-user"></i> {% trans 'Username:' %}
         </label>
         <div class="col-sm-8">
           <input type="text" name="pma_username" id="input_username" value="{{ default_user }}" class="form-control" autocomplete="username" spellcheck="false">
         </div>
       </div>
 
-      <div class="row">
+      <div class="row animate__animated animate__fadeInLeft" style="animation-delay:0.3s">
         <label for="input_password" class="col-sm-4 col-form-label">
-          {% trans 'Password:' %}
+          <i class="fas fa-lock"></i> {% trans 'Password:' %}
         </label>
         <div class="col-sm-8">
-          <input type="password" name="pma_password" id="input_password" value="" class="form-control" autocomplete="current-password" spellcheck="false">
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-key"></i></span>
+            <input type="password" name="pma_password" id="input_password" value="" class="form-control" autocomplete="current-password" spellcheck="false">
+            <button type="button" id="toggle_password" class="btn btn-outline-secondary" title="Tampilkan/Sembunyikan password" tabindex="-1">
+              <i class="fas fa-eye" id="eye_open"></i>
+              <i class="fas fa-eye-slash" id="eye_closed" style="display:none"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-3 animate__animated animate__fadeInUp" style="animation-delay:0.4s">
+        <div class="col-sm-12">
+          <div class="pma-captcha-box">
+            <div class="pma-captcha-header">
+              <span class="pma-captcha-title"><i class="fas fa-shield-alt"></i> Captcha</span>
+              <button type="button" id="btn_refresh_captcha" class="pma-captcha-refresh" title="Ganti CAPTCHA">
+                <i class="fas fa-sync-alt"></i> Ganti
+              </button>
+            </div>
+            <p class="pma-captcha-desc">Masukkan huruf kapital dan angka sesuai gambar.</p>
+            <div class="pma-captcha-display" id="captcha_display">
+              {{ captcha_svg|raw }}
+            </div>
+            <input type="text" name="pma_captcha" id="input_captcha" class="form-control pma-captcha-input" placeholder="KETIK CAPTCHA" autocomplete="off" maxlength="6">
+            <input type="hidden" name="pma_captcha_token" id="captcha_token" value="{{ captcha_token }}">
+          </div>
         </div>
       </div>
 
       {% if has_servers %}
-        <div class="row mt-3">
+        <div class="row mt-3 animate__animated animate__fadeInLeft" style="animation-delay:0.5s">
           <label for="select_server" class="col-sm-4 col-form-label">
-            {% trans 'Server choice:' %}
+            <i class="fas fa-database"></i> {% trans 'Server choice:' %}
           </label>
           <div class="col-sm-8">
             <select name="server" id="select_server" class="form-select"
@@ -105,36 +131,337 @@
         <input type="hidden" name="server" value="{{ server }}">
       {% endif %}
     </div>
-    <div class="card-footer">
-      {% if has_captcha %}
-        <script src="{{ captcha_api }}?hl={{ lang }}" async defer></script>
-        {% if use_captcha_checkbox %}
-          <div class="row g-3">
-            <div class="col">
-              <div class="{{ captcha_req }}" data-sitekey="{{ captcha_key }}"></div>
-            </div>
-            <div class="col align-self-center text-end">
-              <input class="btn btn-primary" value="{% trans 'Log in' %}" type="submit" id="input_go">
-            </div>
-          </div>
-        {% else %}
-          <input class="btn btn-primary {{ captcha_req }}" data-sitekey="{{ captcha_key }}" data-callback="Functions_recaptchaCallback" value="{% trans 'Log in' %}" type="submit" id="input_go">
-        {% endif %}
-      {% else %}
-        <input class="btn btn-primary" value="{% trans 'Log in' %}" type="submit" id="input_go">
-      {% endif %}
+    <div class="card-footer animate__animated animate__fadeInUp" style="animation-delay:0.6s">
+      <button class="btn btn-primary" type="submit" id="input_go">
+        <i class="fas fa-sign-in-alt" id="btn_icon_login"></i>
+        <i class="fas fa-sync-alt fa-spin" id="btn_icon_loading" style="display:none"></i>
+        <span id="btn_text">{% trans 'Log in' %}</span>
+      </button>
     </div>
   </div>
 </form>
 
-{% if errors is not empty %}
-  <div id="pma_errors">
-    {{ errors|raw }}
-  </div>
-  </div>
-  </div>
-{% endif %}
-
 {{ login_footer|raw }}
 
 {{ config_footer|raw }}
+
+<style>
+.pma-captcha-box {
+  background: #eee;
+  border: 1px solid #aaa;
+  border-radius: 0.25rem;
+  padding: 12px 16px;
+  margin-top: 12px;
+  box-shadow: 2px 2px 5px #ccc;
+}
+.pma-captcha-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.pma-captcha-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #444;
+  text-shadow: 1px 1px 2px #fff;
+}
+.pma-captcha-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #ddd;
+  color: #444;
+  border: 1px solid #aaa;
+  border-radius: 0.25rem;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pma-captcha-refresh:hover {
+  background: #ccc;
+  color: #222;
+  border-color: #999;
+}
+.pma-captcha-desc {
+  font-size: 12px;
+  color: #666;
+  margin: 0 0 10px 0;
+}
+.pma-captcha-display {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  padding: 8px;
+  text-align: center;
+  margin-bottom: 10px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.pma-captcha-display svg {
+  max-width: 100%;
+  height: auto;
+}
+.pma-captcha-input {
+  width: 100%;
+  background: #fff !important;
+  border: 1px solid #aaa !important;
+  border-radius: 0.25rem !important;
+  color: #444 !important;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 3px;
+  padding: 8px 12px !important;
+  text-align: center;
+  text-transform: uppercase;
+}
+.pma-captcha-input::placeholder {
+  color: #999;
+  letter-spacing: 2px;
+}
+.pma-captcha-input:focus {
+  border-color: #235a81 !important;
+  box-shadow: 0 0 0 2px rgba(35, 90, 129, 0.15) !important;
+  outline: none;
+}
+.pma-captcha-input.error,
+.pma-captcha-input.input-error {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15) !important;
+}
+.login-error-msg {
+  background: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+  border-radius: 0.25rem;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+.login-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+#input_go {
+  min-width: 100px;
+}
+.input-group .form-control {
+  border-right: none;
+}
+.input-group .btn-outline-secondary {
+  border-left: none;
+  background: #fff;
+  color: #666;
+  border-color: #aaa;
+}
+.input-group .btn-outline-secondary:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+.input-group-text {
+  background: #f8f9fa;
+  border-color: #aaa;
+  color: #235a81;
+}
+.card-header i {
+  margin-right: 5px;
+}
+.card-footer .btn i {
+  margin-right: 5px;
+}
+.login-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+</style>
+
+{# jQuery 3.x sudah di-load oleh phpMyAdmin header #}
+<script>
+(function() {
+  if (typeof jQuery === 'undefined') return;
+  if (!document.getElementById('login_form')) return;
+
+  jQuery(function($) {
+  'use strict';
+  console.log('[LOGIN] jQuery version:', $.fn.jquery);
+
+  /* ====== TOGGLE SHOW/HIDE PASSWORD ====== */
+  $('#toggle_password').on('click', function() {
+    var $pwd = $('#input_password');
+    if ($pwd.attr('type') === 'password') {
+      $pwd.attr('type', 'text');
+      $('#eye_open').hide();
+      $('#eye_closed').show();
+    } else {
+      $pwd.attr('type', 'password');
+      $('#eye_open').show();
+      $('#eye_closed').hide();
+    }
+  });
+
+  /* ====== CAPTCHA REFRESH via jQuery AJAX ====== */
+  $('#btn_refresh_captcha').on('click', function() {
+    var $btn = $(this);
+    var $display = $('#captcha_display');
+    var $captchaInput = $('#input_captcha');
+
+    /* spin animation via FontAwesome */
+    $btn.find('i').addClass('fa-spin').prop('disabled', true);
+
+    $.ajax({
+      url: 'captcha-refresh.php',
+      type: 'GET',
+      dataType: 'json',
+      success: function(data) {
+        if (data && data.success && data.svg) {
+          /* Validasi SVG sebelum inject */
+          var svgStr = data.svg;
+          var hasScript  = /<script[\s>]/i.test(svgStr);
+          var hasEvent   = /\bon\w+\s*=/i.test(svgStr);
+          var hasForeign = /<foreignobject/i.test(svgStr);
+          if (!hasScript && !hasEvent && !hasForeign) {
+            $display.html(svgStr);
+          }
+          /* Update token */
+          if (data.token) {
+            $('#captcha_token').val(data.token);
+          }
+        }
+      },
+      complete: function() {
+        $btn.find('i').removeClass('fa-spin').prop('disabled', false);
+        $captchaInput.val('').focus();
+        /* Bersihkan error phpMyAdmin */
+        $('#pma_errors').remove();
+        $('div[role="alert"]').remove();
+      }
+    });
+  });
+
+  /* ====== LOGIN FORM via jQuery Validate + jQuery AJAX ====== */
+  var $loginForm = $('#login_form');
+
+  if ($loginForm.length) {
+    $loginForm.validate({
+      rules: {
+        pma_username:     { required: true },
+        pma_password:     { required: false },
+        pma_captcha:      { required: true, minlength: 6, maxlength: 6 },
+        pma_captcha_token:{ required: true }
+      },
+      messages: {
+        pma_username: { required: 'Username harus diisi.' },
+        pma_captcha: {
+          required:  'CAPTCHA harus diisi.',
+          minlength: 'CAPTCHA harus tepat 6 karakter.',
+          maxlength: 'CAPTCHA harus tepat 6 karakter.'
+        },
+        pma_captcha_token: { required: 'Token tidak valid.' }
+      },
+      errorClass: 'input-error',
+      errorPlacement: function(error, $element) {
+        if ($element.attr('name') === 'pma_captcha') {
+          error.insertAfter('.pma-captcha-box');
+        } else {
+          error.insertAfter($element);
+        }
+      },
+      submitHandler: function(form) {
+        var $form     = $(form);
+        var $errorBox = $('#pma_login_error_box');
+
+        console.log('[LOGIN] submitHandler fired');
+        $errorBox.hide().empty();
+        /* Tampilkan icon loading, sembunyikan icon login */
+        $('#btn_icon_login').hide();
+        $('#btn_icon_loading').show();
+        $('#btn_text').text('Memproses...');
+        $form.addClass('login-loading');
+
+        var postData = $form.serialize() + '&ajax_request=true';
+        console.log('[LOGIN] posting data length:', postData.length);
+
+        $.ajax({
+          url:      'index.php?route=/',
+          type:     'POST',
+          data:     postData,
+          dataType: 'text',
+          success: function(raw) {
+            console.log('[LOGIN] AJAX success, response length:', raw ? raw.length : 0);
+            console.log('[LOGIN] first 500 chars:', raw ? raw.substring(0, 500) : 'empty');
+            /* Kembalikan icon button */
+            $('#btn_icon_login').show();
+            $('#btn_icon_loading').hide();
+            $('#btn_text').text('{% trans "Log in" %}');
+            $form.removeClass('login-loading');
+
+            /* Coba parse JSON dari response */
+            var data = null;
+            try {
+              /* Response mungkin JSON atau JSON wrapped di HTML */
+              var jsonStr = raw;
+              var jsonStart = raw.indexOf('{');
+              var jsonEnd = raw.lastIndexOf('}');
+              if (jsonStart !== -1 && jsonEnd > jsonStart) {
+                jsonStr = raw.substring(jsonStart, jsonEnd + 1);
+              }
+              data = JSON.parse(jsonStr);
+            } catch(e) {
+              data = null;
+            }
+
+            if (data && data.success) {
+              /* Login berhasil - redirect ke halaman utama */
+              window.location = 'index.php';
+              return;
+            }
+
+            /* Ambil pesan error dari berbagai kemungkinan field */
+            var msg = 'Username atau password salah.';
+            if (data) {
+              if (data.error) {
+                msg = data.error;
+              } else if (data.errSubmitMsg) {
+                msg = data.errSubmitMsg;
+              } else if (data.message) {
+                /* response dari ResponseRenderer ajaxResponse */
+                var tmp = document.createElement('div');
+                tmp.innerHTML = data.message;
+                msg = tmp.textContent || tmp.innerText || msg;
+              }
+            }
+            var $msgDiv = $('<div>').addClass('login-error-msg').text(msg);
+            $errorBox.empty().append($msgDiv).show();
+            $('#btn_refresh_captcha').trigger('click');
+
+            /* Bersihkan error dari phpMyAdmin AJAX handler */
+            setTimeout(function() {
+              $('#pma_errors').remove();
+              $('.login .alert-danger').remove();
+              $('div[role="alert"]').remove();
+            }, 200);
+          },
+          error: function(xhr, status, err) {
+            console.log('[LOGIN] AJAX error:', status, err, 'status:', xhr.status);
+            /* Kembalikan icon button */
+            $('#btn_icon_login').show();
+            $('#btn_icon_loading').hide();
+            $('#btn_text').text('{% trans "Log in" %}');
+            $form.removeClass('login-loading');
+            var msg = 'Terjadi kesalahan. Status: ' + xhr.status;
+            var $msgDiv = $('<div>').addClass('login-error-msg').text(msg);
+            $errorBox.empty().append($msgDiv).show();
+            $('#btn_refresh_captcha').trigger('click');
+          }
+        });
+        return false;
+      }
+    });
+  }
+  });
+})();
+</script>

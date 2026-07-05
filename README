@@ -50,3 +50,86 @@ Enjoy!
 ------
 
 The phpMyAdmin team
+
+================================================================================
+               CATATAN MODIFIKASI - Fork oleh Yamiriko
+================================================================================
+
+Tampilan Login dengan CAPTCHA Custom
+-------------------------------------
+
+Dirombak total bagian halaman login. Sekarang ada CAPTCHA buatan sendiri
+dengan tampilan SVG, refresh via AJAX tanpa reload halaman, dan form login
+yang dikirim pakai AJAX juga.
+
+File yang ditambah:
+  - libraries/classes/Captcha/Captcha.php
+      Generate kode CAPTCHA acak 6 karakter, simpan di session,
+      verifikasi input user, render jadi gambar SVG.
+
+  - captcha-refresh.php
+      Endpoint AJAX buat refresh CAPTCHA. Return JSON berisi SVG baru
+      dan token CSRF baru.
+
+File yang diubah:
+  - templates/login/form.twig
+      Form login dirapikan total. Tambah kolom CAPTCHA, tombol show/hide
+      password, icon-icon dari FontAwesome, animasi masuk dari Animate.css.
+      Semua submit dan refresh pakai jQuery AJAX.
+
+  - libraries/classes/Plugins/Auth/AuthenticationCookie.php
+      Validasi CAPTCHA sebelum proses login. Kalau AJAX request, kirim
+      response JSON (bukan redirect). Ada juga rate limiting buat
+      cegah brute force.
+
+  - libraries/classes/Common.php
+      Skip pengecekan CSRF token untuk form login, karena form login
+      memang belum punya token sebelum user masuk.
+
+  - vendor/composer/autoload_classmap.php
+  - vendor/composer/autoload_static.php
+      Tambah mapping class Captcha supaya bisa di-load otomatis.
+
+Fitur-fiturnya:
+  - CAPTCHA 6 karakter (huruf besar + angka), render sebagai SVG
+  - Refresh CAPTCHA pakai AJAX, ada animasi putar tombol
+  - Login juga pakai AJAX, ada spinner di tombol Masuk
+  - CAPTCHA punya token CSRF sendiri biar nggak bisa di-replay
+  - Rate limiting: maks 5x coba login per 2 menit,
+    maks 20x refresh CAPTCHA per menit
+  - Proteksi XSS: semua output di-escape, SVG divalidasi sebelum inject
+  - Proteksi SQL Injection: username disanitize, input CAPTCHA difilter
+
+Animate.css & Font Awesome
+---------------------------
+
+Ditambahin buat bikin form login lebih hidup. Kedua library di-load
+lokal (bukan CDN) biar nggak tergantung koneksi internet.
+
+File yang ditambah:
+  - js/vendor/animate/animate.min.css        (Animate.css v4.1.1)
+  - js/vendor/fontawesome/css/all.min.css    (Font Awesome v6.7.2)
+  - js/vendor/fontawesome/webfonts/*.woff2   (file font-nya)
+  - js/vendor/fontawesome/webfonts/*.ttf     (fallback buat browser lama)
+
+Yang dipakai di form login:
+  - Animate.css: fadeInUp, fadeInLeft, fadeInDown buat efek muncul
+    per-element dengan delay bertahap (staggered animation).
+  - Font Awesome: icon di setiap label field (user, lock, server, dll),
+    icon mata buat show/hide password, icon sync buat refresh CAPTCHA,
+    dan icon spinner (fa-spin) di tombol Masuk saat proses login.
+
+Versi jQuery
+------------
+
+phpMyAdmin sudah bawa jQuery 3.7.1 dan jQuery Validate 1.21.0 dari
+sononya. Login form cuma nebeng yang sudah ada, nggak nambah load
+jQuery baru biar nggak bentrok sama plugin phpMyAdmin yang lain.
+
+Catatan:
+  - jQuery 4 nggak dipakai karena bikin plugin menuResizer dan
+    komponen phpMyAdmin lainnya error.
+  - jQuery Validate 1.22.1 juga nggak kompatibel, jadi tetap
+    pakai 1.21.0 yang sudah ada.
+
+================================================================================
