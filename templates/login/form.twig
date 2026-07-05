@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="js/vendor/fontawesome/css/all.min.css">
 
 {% if is_demo %}
-  <div class="card mb-4 animate__animated animate__fadeInDown">
+  <div class="card mb-4 login-anim-card">
     <div class="card-header">{% trans 'phpMyAdmin Demo Server' %}</div>
     <div class="card-body">
       {% apply format('<a href="url.php?url=https://demo.phpmyadmin.net/" target="_blank" rel="noopener noreferrer">demo.phpmyadmin.net</a>')|raw %}
@@ -53,14 +53,14 @@
     <input type="hidden" name="session_timedout" value="1">
   {% endif %}
 
-  <div class="card mb-4 animate__animated animate__fadeInUp">
+  <div class="card mb-4 login-anim-card">
     <div class="card-header">
       <i class="fas fa-sign-in-alt"></i> {% trans 'Log in' %}
       {{ show_docu('index') }}
     </div>
     <div class="card-body">
       {% if is_arbitrary_server_allowed %}
-        <div class="row mb-3 animate__animated animate__fadeInLeft" style="animation-delay:0.1s">
+        <div class="row mb-3 login-anim-field" style="--d:0">
           <label for="serverNameInput" class="col-sm-4 col-form-label" title="{% trans 'You can enter hostname/IP address and port separated by space.' %}">
             <i class="fas fa-server"></i> {% trans 'Server:' %}
           </label>
@@ -71,7 +71,7 @@
         </div>
       {% endif %}
 
-      <div class="row mb-3 animate__animated animate__fadeInLeft" style="animation-delay:0.2s">
+      <div class="row mb-3 login-anim-field" style="--d:1">
         <label for="input_username" class="col-sm-4 col-form-label">
           <i class="fas fa-user"></i> {% trans 'Username:' %}
         </label>
@@ -80,7 +80,7 @@
         </div>
       </div>
 
-      <div class="row animate__animated animate__fadeInLeft" style="animation-delay:0.3s">
+      <div class="row login-anim-field" style="--d:2">
         <label for="input_password" class="col-sm-4 col-form-label">
           <i class="fas fa-lock"></i> {% trans 'Password:' %}
         </label>
@@ -96,7 +96,7 @@
         </div>
       </div>
 
-      <div class="row mt-3 animate__animated animate__fadeInUp" style="animation-delay:0.4s">
+      <div class="row mt-3 login-anim-field" style="--d:3">
         <div class="col-sm-12">
           <div class="pma-captcha-box">
             <div class="pma-captcha-header">
@@ -116,7 +116,7 @@
       </div>
 
       {% if has_servers %}
-        <div class="row mt-3 animate__animated animate__fadeInLeft" style="animation-delay:0.5s">
+        <div class="row mt-3 login-anim-field" style="--d:4">
           <label for="select_server" class="col-sm-4 col-form-label">
             <i class="fas fa-database"></i> {% trans 'Server choice:' %}
           </label>
@@ -131,7 +131,7 @@
         <input type="hidden" name="server" value="{{ server }}">
       {% endif %}
     </div>
-    <div class="card-footer animate__animated animate__fadeInUp" style="animation-delay:0.6s">
+    <div class="card-footer login-anim-field" style="--d:5">
       <button class="btn btn-primary" type="submit" id="input_go">
         <i class="fas fa-sign-in-alt" id="btn_icon_login"></i>
         <i class="fas fa-sync-alt fa-spin" id="btn_icon_loading" style="display:none"></i>
@@ -146,6 +146,94 @@
 {{ config_footer|raw }}
 
 <style>
+/* ===== Smooth entrance animation ===== */
+@keyframes loginCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+@keyframes loginFieldIn {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.login-anim-card {
+  animation: loginCardIn 0.55s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.login-anim-field {
+  opacity: 0;
+  animation: loginFieldIn 0.45s cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc(var(--d, 0) * 0.08s + 0.15s);
+}
+
+/* ===== Smooth transitions on interactions ===== */
+.form-control, .form-select, .input-group-text {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+.form-control:focus, .form-select:focus {
+  border-color: #235a81;
+  box-shadow: 0 0 0 0.15rem rgba(35, 90, 129, 0.15);
+}
+
+.btn-primary {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(35, 90, 129, 0.3);
+}
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(35, 90, 129, 0.2);
+}
+
+.input-group .btn-outline-secondary {
+  transition: all 0.2s ease;
+}
+.input-group .btn-outline-secondary:hover {
+  background: #e9ecef;
+  color: #333;
+}
+
+.pma-captcha-refresh {
+  transition: all 0.25s ease;
+}
+.pma-captcha-refresh:hover {
+  transform: scale(1.03);
+}
+
+.card {
+  transition: box-shadow 0.3s ease;
+}
+.card:hover {
+  box-shadow: 2px 2px 5px #bbb, 0 4px 16px rgba(0,0,0,0.06);
+}
+
+/* ===== CAPTCHA display smooth fade ===== */
+.pma-captcha-display {
+  transition: opacity 0.2s ease;
+}
+
+/* ===== Error message smooth appear ===== */
+.login-error-msg {
+  animation: loginFieldIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* ===== Original theme styles (unchanged) ===== */
 .pma-captcha-box {
   background: #eee;
   border: 1px solid #aaa;
@@ -177,7 +265,6 @@
   padding: 4px 12px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 .pma-captcha-refresh:hover {
   background: #ccc;
@@ -243,7 +330,7 @@
   font-size: 13px;
 }
 .login-loading {
-  opacity: 0.6;
+  opacity: 0.7;
   pointer-events: none;
 }
 #input_go {
@@ -258,10 +345,6 @@
   color: #666;
   border-color: #aaa;
 }
-.input-group .btn-outline-secondary:hover {
-  background: #f0f0f0;
-  color: #333;
-}
 .input-group-text {
   background: #f8f9fa;
   border-color: #aaa;
@@ -272,10 +355,6 @@
 }
 .card-footer .btn i {
   margin-right: 5px;
-}
-.login-loading {
-  opacity: 0.7;
-  pointer-events: none;
 }
 </style>
 
