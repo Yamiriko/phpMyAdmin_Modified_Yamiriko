@@ -58,6 +58,11 @@ Captcha::store($code);
 $svg = Captcha::renderImage($code);
 $token = Captcha::getToken();
 
+// Pastikan session tersimpan sebelum output
+if (session_status() === PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+
 // Use JSON_HEX_TAG to prevent XSS via </script> injection in JSON responses
 echo json_encode([
     'success' => true,

@@ -101,7 +101,11 @@ class Captcha
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        unset($_SESSION['pma_captcha_code'], $_SESSION['pma_captcha_time']);
+        unset(
+            $_SESSION['pma_captcha_code'],
+            $_SESSION['pma_captcha_time'],
+            $_SESSION['pma_captcha_token']
+        );
     }
 
     /**

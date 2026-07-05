@@ -244,22 +244,6 @@ class AuthenticationCookie extends AuthenticationPlugin
         $GLOBALS['from_cookie'] = false;
 
         if (isset($_POST['pma_username']) && strlen($_POST['pma_username']) > 0) {
-            // Rate limiting: max 5 login attempts per 2 minutes
-            $loginRateKey = 'pma_login_attempts';
-            $loginRateTimeKey = 'pma_login_time';
-            if (! isset($_SESSION[$loginRateTimeKey]) || (time() - $_SESSION[$loginRateTimeKey]) > 120) {
-                $_SESSION[$loginRateTimeKey] = time();
-                $_SESSION[$loginRateKey] = 0;
-            }
-            $_SESSION[$loginRateKey] = ($_SESSION[$loginRateKey] ?? 0) + 1;
-
-            if (($_SESSION[$loginRateKey] ?? 0) > 5) {
-                $msg = __('Terlalu banyak percobaan login. Silakan tunggu 2 menit.');
-                $conn_error = $msg;
-                $this->sendAjaxLoginError($msg);
-                return false;
-            }
-
             // Sanitize CAPTCHA input: only allow alphanumeric, max 6 chars
             $captchaInput = preg_replace('/[^A-Za-z0-9]/', '', $_POST['pma_captcha'] ?? '');
             if (strlen($captchaInput) !== 6) {
@@ -763,6 +747,10 @@ class AuthenticationCookie extends AuthenticationPlugin
     private function sendAjaxLoginError(string $message): void
     {
         if (! empty($_POST['ajax_request'])) {
+            // Pastikan session tersimpan sebelum exit
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_write_close();
+            }
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode([
                 'success' => false,
