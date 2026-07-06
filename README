@@ -100,6 +100,66 @@ Fitur-fiturnya:
   - Proteksi XSS: semua output di-escape, SVG divalidasi sebelum inject
   - Proteksi SQL Injection: username disanitize, input CAPTCHA difilter
 
+SweetAlert2 untuk Notifikasi Login
+-----------------------------------
+
+Semua notifikasi di halaman login (berhasil, gagal, error jaringan, error
+CAPTCHA) sekarang pakai SweetAlert2. Tampilannya lebih bersih, modern,
+dan konsisten. Setiap notifikasi punya tombol OK plus timer mundur jadi
+kalau user nggak klik, notifikasi tertutup otomatis.
+
+File yang ditambah:
+  - js/vendor/sweetalert2/sweetalert2.min.js   (SweetAlert2 v11.26.25)
+  - js/vendor/sweetalert2/sweetalert2.min.css
+
+Yang diubah:
+  - templates/login/form.twig
+      Hapus div #pma_login_error_box yang lama. Sekarang semua pesan
+      ditampilkan pakai Swal.fire() dengan tipe success, error, atau
+      warning. CSS SweetAlert2 di-load di halaman login aja.
+
+Tema Dinamis untuk CAPTCHA
+---------------------------
+
+Bagian CAPTCHA di form login sekarang mengikuti warna tema yang aktif
+secara otomatis. Kalau kamu ganti tema di phpMyAdmin (pmahomme, original,
+metro, atau bootstrap), warna CAPTCHA juga ikut berubah.
+
+Cara kerjanya:
+  - JavaScript mendeteksi nama tema dari variabel Twig theme_path
+  - Setelah tema diketahui, CSS custom properties di-set ke :root
+  - Semua style CAPTCHA pakai var(--captcha-*) dengan fallback
+
+Tema yang didukung:
+  - pmahomme  : abu-abu terang, border-radius kecil, shadow halus
+  - original  : abu-abu kebiruan, border tajam (radius 0), tanpa shadow
+  - metro     : putih bersih, border transparent, gaya flat
+  - bootstrap : abu-abu Bootstrap, border-radius standar, shadow tipis
+
+Keamanan .htaccess
+-------------------
+
+File .htaccess ditambah di root project buat perlindungan tambahan.
+Yang dijaga:
+
+  - File sensitif (.sql, .log, .env, .lock, .htaccess) nggak bisa
+    diakses langsung lewat browser
+  - File konfigurasi (config.inc.php) diblokir akses langsungnya
+  - File backdoor berdasarkan nama (shell, webshell, c99, r57, dll)
+    nggak bisa diakses
+  - File tersembunyi (dotfiles) kecuali .htaccess sendiri
+  - Path traversal (../) di query string diblokir
+  - Directory listing dimatikan (Options -Indexes)
+  - Header keamanan HTTP diaktifkan:
+    * X-Content-Type-Options: nosniff
+    * X-XSS-Protection: 1; mode=block
+    * X-Frame-Options: SAMEORIGIN
+    * Referrer-Policy: strict-origin-when-cross-origin
+  - Konfigurasi PHP: upload max 10M, max execution time 300 detik
+
+Catatan: .htaccess ini nggak memblokir import/export database karena
+proses itu lewat PHP (bukan akses langsung file statis).
+
 Animate.css & Font Awesome
 ---------------------------
 

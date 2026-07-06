@@ -1,0 +1,69 @@
+# ============================================================
+# Security .htaccess untuk phpMyAdmin (Modified Yamiriko)
+# Melindungi dari serangan backdoor tanpa mengganggu akses sah.
+# ============================================================
+
+# Matikan directory listing
+Options -Indexes
+
+# Matikan server signature
+ServerSignature Off
+
+# ============================================================
+# Proteksi akses ke file sensitif via FilesMatch
+# ============================================================
+
+# Mencegah akses langsung ke file data/konfigurasi
+<FilesMatch "\.(sql|log|lock|md|yml|env|gitignore|htaccess|dist)$">
+  Require all denied
+</FilesMatch>
+
+# Lindungi file konfigurasi phpMyAdmin
+<FilesMatch "^(config\.inc\.php|config\.sample\.php)$">
+  Require all denied
+</FilesMatch>
+
+# Blokir akses ke file backdoor umum berdasarkan nama
+<FilesMatch "(shell|cmd|eval|exec|system|passthru|backdoor|webshell|web-shell|wso|b374k|c99|r57|php-spy|symlink|upfile|uploader)\.(php|phtml|php3|php4|php5|php7|phar|shtml)$">
+  Require all denied
+</FilesMatch>
+
+# Cegah akses ke file tersembunyi (dotfiles kecuali .htaccess)
+<FilesMatch "^\.((?!htaccess).)*$">
+  Require all denied
+</FilesMatch>
+
+# ============================================================
+# Proteksi via mod_rewrite
+# ============================================================
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Cegah path traversal (../) di query string
+  RewriteCond %{QUERY_STRING} (\.\./|\.\.\\) [NC]
+  RewriteRule .* - [F,L]
+
+  # Cegah akses ke direktori source control / env
+  RewriteRule "(^|/)\.(git|svn|hg|env)" - [F,L]
+</IfModule>
+
+# ============================================================
+# Proteksi header HTTP (XSS, clickjacking, MIME sniffing)
+# ============================================================
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ============================================================
+# Konfigurasi PHP
+# ============================================================
+<IfModule mod_php.c>
+  php_flag engine on
+  php_value upload_max_filesize 10M
+  php_value post_max_size 10M
+  php_value max_execution_time 300
+  php_value max_input_time 300
+</IfModule>

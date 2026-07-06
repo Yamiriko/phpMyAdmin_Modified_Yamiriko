@@ -1,8 +1,9 @@
 {{ login_header|raw }}
 
-{# Load Animate.css + Font Awesome (hanya untuk login page) #}
+{# Load Animate.css + Font Awesome + SweetAlert2 (hanya untuk login page) #}
 <link rel="stylesheet" href="js/vendor/animate/animate.min.css">
 <link rel="stylesheet" href="js/vendor/fontawesome/css/all.min.css">
+<link rel="stylesheet" href="js/vendor/sweetalert2/sweetalert2.min.css">
 
 {% if is_demo %}
   <div class="card mb-4 login-anim-card">
@@ -16,8 +17,6 @@
     </div>
   </div>
 {% endif %}
-
-<div id="pma_login_error_box" style="display:none;"></div>
 
 {% if available_languages is not empty %}
   <div class='hide js-show'>
@@ -228,19 +227,14 @@
   transition: opacity 0.2s ease;
 }
 
-/* ===== Error message smooth appear ===== */
-.login-error-msg {
-  animation: loginFieldIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) both;
-}
-
-/* ===== Original theme styles (unchanged) ===== */
+/* ===== CAPTCHA dynamic theme styles ===== */
 .pma-captcha-box {
-  background: #eee;
-  border: 1px solid #aaa;
-  border-radius: 0.25rem;
+  background: var(--captcha-bg, #eee);
+  border: 1px solid var(--captcha-border, #aaa);
+  border-radius: var(--captcha-radius, 0.25rem);
   padding: 12px 16px;
   margin-top: 12px;
-  box-shadow: 2px 2px 5px #ccc;
+  box-shadow: var(--captcha-shadow, 2px 2px 5px #ccc);
 }
 .pma-captcha-header {
   display: flex;
@@ -251,35 +245,35 @@
 .pma-captcha-title {
   font-size: 15px;
   font-weight: bold;
-  color: #444;
-  text-shadow: 1px 1px 2px #fff;
+  color: var(--captcha-title-color, #444);
+  text-shadow: 1px 1px 2px var(--captcha-title-shadow, #fff);
 }
 .pma-captcha-refresh {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: #ddd;
-  color: #444;
-  border: 1px solid #aaa;
-  border-radius: 0.25rem;
+  background: var(--captcha-btn-bg, #ddd);
+  color: var(--captcha-btn-color, #444);
+  border: 1px solid var(--captcha-btn-border, #aaa);
+  border-radius: var(--captcha-radius, 0.25rem);
   padding: 4px 12px;
   font-size: 12px;
   cursor: pointer;
 }
 .pma-captcha-refresh:hover {
-  background: #ccc;
-  color: #222;
-  border-color: #999;
+  background: var(--captcha-btn-hover-bg, #ccc);
+  color: var(--captcha-btn-hover-color, #222);
+  border-color: var(--captcha-btn-hover-border, #999);
 }
 .pma-captcha-desc {
   font-size: 12px;
-  color: #666;
+  color: var(--captcha-desc-color, #666);
   margin: 0 0 10px 0;
 }
 .pma-captcha-display {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 0.25rem;
+  background: var(--captcha-display-bg, #fff);
+  border: 1px solid var(--captcha-display-border, #ccc);
+  border-radius: var(--captcha-radius, 0.25rem);
   padding: 8px;
   text-align: center;
   margin-bottom: 10px;
@@ -295,10 +289,10 @@
 }
 .pma-captcha-input {
   width: 100%;
-  background: #fff !important;
-  border: 1px solid #aaa !important;
-  border-radius: 0.25rem !important;
-  color: #444 !important;
+  background: var(--captcha-input-bg, #fff) !important;
+  border: 1px solid var(--captcha-input-border, #aaa) !important;
+  border-radius: var(--captcha-radius, 0.25rem) !important;
+  color: var(--captcha-input-color, #444) !important;
   font-size: 14px;
   font-family: 'Courier New', monospace;
   letter-spacing: 3px;
@@ -307,27 +301,18 @@
   text-transform: uppercase;
 }
 .pma-captcha-input::placeholder {
-  color: #999;
+  color: var(--captcha-placeholder, #999);
   letter-spacing: 2px;
 }
 .pma-captcha-input:focus {
-  border-color: #235a81 !important;
-  box-shadow: 0 0 0 2px rgba(35, 90, 129, 0.15) !important;
+  border-color: var(--captcha-focus-border, #235a81) !important;
+  box-shadow: 0 0 0 2px var(--captcha-focus-shadow, rgba(35, 90, 129, 0.15)) !important;
   outline: none;
 }
 .pma-captcha-input.error,
 .pma-captcha-input.input-error {
   border-color: #dc3545 !important;
   box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15) !important;
-}
-.login-error-msg {
-  background: #f8d7da;
-  color: #842029;
-  border: 1px solid #f5c2c7;
-  border-radius: 0.25rem;
-  padding: 8px 12px;
-  margin-bottom: 10px;
-  font-size: 13px;
 }
 .login-loading {
   opacity: 0.7;
@@ -359,10 +344,118 @@
 </style>
 
 {# jQuery 3.x sudah di-load oleh phpMyAdmin header #}
+<script src="js/vendor/sweetalert2/sweetalert2.min.js"></script>
 <script>
 (function() {
   if (typeof jQuery === 'undefined') return;
   if (!document.getElementById('login_form')) return;
+
+  /* ====== DETEKSI TEMA & SET CSS VARIABLES ====== */
+  var themePath = '{{ theme_path }}';
+  var themeMatch = themePath.match(/themes\/([^\/]+)/);
+  var themeName = themeMatch ? themeMatch[1] : 'pmahomme';
+  var root = document.documentElement;
+
+  var themes = {
+    pmahomme: {
+      '--captcha-bg':              '#eee',
+      '--captcha-border':          '#aaa',
+      '--captcha-radius':          '0.25rem',
+      '--captcha-shadow':          '2px 2px 5px #ccc',
+      '--captcha-title-color':     '#444',
+      '--captcha-title-shadow':    '#fff',
+      '--captcha-desc-color':      '#666',
+      '--captcha-btn-bg':          '#ddd',
+      '--captcha-btn-color':       '#444',
+      '--captcha-btn-border':      '#aaa',
+      '--captcha-btn-hover-bg':    '#ccc',
+      '--captcha-btn-hover-color': '#222',
+      '--captcha-btn-hover-border':'#999',
+      '--captcha-display-bg':      '#fff',
+      '--captcha-display-border':  '#ccc',
+      '--captcha-input-bg':        '#fff',
+      '--captcha-input-border':    '#aaa',
+      '--captcha-input-color':     '#444',
+      '--captcha-placeholder':     '#999',
+      '--captcha-focus-border':    '#235a81',
+      '--captcha-focus-shadow':    'rgba(35, 90, 129, 0.15)'
+    },
+    original: {
+      '--captcha-bg':              '#e5e5e5',
+      '--captcha-border':          '#000',
+      '--captcha-radius':          '0',
+      '--captcha-shadow':          'none',
+      '--captcha-title-color':     '#000',
+      '--captcha-title-shadow':    'transparent',
+      '--captcha-desc-color':      '#555',
+      '--captcha-btn-bg':          '#d0dce0',
+      '--captcha-btn-color':       '#000',
+      '--captcha-btn-border':      '#000',
+      '--captcha-btn-hover-bg':    '#8b9aa0',
+      '--captcha-btn-hover-color': '#fff',
+      '--captcha-btn-hover-border':'#000',
+      '--captcha-display-bg':      '#f5f5f5',
+      '--captcha-display-border':  '#000',
+      '--captcha-input-bg':        '#f5f5f5',
+      '--captcha-input-border':    '#000',
+      '--captcha-input-color':     '#000',
+      '--captcha-placeholder':     '#666',
+      '--captcha-focus-border':    '#00f',
+      '--captcha-focus-shadow':    'rgba(0, 0, 255, 0.15)'
+    },
+    metro: {
+      '--captcha-bg':              '#f7f7f7',
+      '--captcha-border':          'transparent',
+      '--captcha-radius':          '0',
+      '--captcha-shadow':          'none',
+      '--captcha-title-color':     '#333',
+      '--captcha-title-shadow':    'transparent',
+      '--captcha-desc-color':      '#666',
+      '--captcha-btn-bg':          '#aaa',
+      '--captcha-btn-color':       '#fff',
+      '--captcha-btn-border':      'transparent',
+      '--captcha-btn-hover-bg':    '#888',
+      '--captcha-btn-hover-color': '#fff',
+      '--captcha-btn-hover-border':'transparent',
+      '--captcha-display-bg':      '#fff',
+      '--captcha-display-border':  '#ddd',
+      '--captcha-input-bg':        '#fff',
+      '--captcha-input-border':    '#ddd',
+      '--captcha-input-color':     '#333',
+      '--captcha-placeholder':     '#999',
+      '--captcha-focus-border':    '#377796',
+      '--captcha-focus-shadow':    'rgba(55, 119, 150, 0.15)'
+    },
+    bootstrap: {
+      '--captcha-bg':              '#f8f9fa',
+      '--captcha-border':          '#dee2e6',
+      '--captcha-radius':          '0.375rem',
+      '--captcha-shadow':          '0 0.125rem 0.25rem rgba(0,0,0,0.075)',
+      '--captcha-title-color':     '#212529',
+      '--captcha-title-shadow':    'transparent',
+      '--captcha-desc-color':      '#6c757d',
+      '--captcha-btn-bg':          '#e9ecef',
+      '--captcha-btn-color':       '#212529',
+      '--captcha-btn-border':      '#dee2e6',
+      '--captcha-btn-hover-bg':    '#dee2e6',
+      '--captcha-btn-hover-color': '#212529',
+      '--captcha-btn-hover-border':'#ced4da',
+      '--captcha-display-bg':      '#fff',
+      '--captcha-display-border':  '#dee2e6',
+      '--captcha-input-bg':        '#fff',
+      '--captcha-input-border':    '#ced4da',
+      '--captcha-input-color':     '#212529',
+      '--captcha-placeholder':     '#6c757d',
+      '--captcha-focus-border':    '#86b7fe',
+      '--captcha-focus-shadow':    'rgba(13, 109, 250, 0.25)'
+    }
+  };
+
+  var vars = themes[themeName] || themes.pmahomme;
+  Object.keys(vars).forEach(function(key) {
+    root.style.setProperty(key, vars[key]);
+  });
+  console.log('[LOGIN] Theme detected:', themeName);
 
   jQuery(function($) {
   'use strict';
@@ -404,12 +497,40 @@
           var hasForeign = /<foreignobject/i.test(svgStr);
           if (!hasScript && !hasEvent && !hasForeign) {
             $display.html(svgStr);
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Gagal Memperbarui CAPTCHA',
+              text: 'CAPTCHA tidak valid. Silakan coba lagi.',
+              timer: 5000,
+              timerProgressBar: true,
+              confirmButtonText: 'OK'
+            });
           }
           /* Update token */
           if (data.token) {
             $('#captcha_token').val(data.token);
           }
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Gagal Memperbarui CAPTCHA',
+            text: 'Respons tidak valid dari server.',
+            timer: 5000,
+            timerProgressBar: true,
+            confirmButtonText: 'OK'
+          });
         }
+      },
+      error: function() {
+        Swal.fire({
+          icon: 'error',
+          title: 'Kesalahan Jaringan',
+          text: 'Tidak dapat memperbarui CAPTCHA. Periksa koneksi Anda.',
+          timer: 5000,
+          timerProgressBar: true,
+          confirmButtonText: 'OK'
+        });
       },
       complete: function() {
         $btn.find('i').removeClass('fa-spin').prop('disabled', false);
@@ -451,10 +572,8 @@
       },
       submitHandler: function(form) {
         var $form     = $(form);
-        var $errorBox = $('#pma_login_error_box');
 
         console.log('[LOGIN] submitHandler fired');
-        $errorBox.hide().empty();
         /* Tampilkan icon loading, sembunyikan icon login */
         $('#btn_icon_login').hide();
         $('#btn_icon_loading').show();
@@ -494,8 +613,18 @@
             }
 
             if (data && data.success) {
-              /* Login berhasil - redirect ke halaman utama */
-              window.location = 'index.php';
+              /* Login berhasil - tampilkan SweetAlert2 toast lalu redirect */
+              Swal.fire({
+                icon: 'success',
+                title: 'Login Berhasil!',
+                text: 'Anda akan diarahkan ke halaman utama.',
+                timer: 3000,
+                timerProgressBar: true,
+                confirmButtonText: 'OK',
+                willClose: function() {
+                  window.location = 'index.php';
+                }
+              });
               return;
             }
 
@@ -513,12 +642,17 @@
                 msg = tmp.textContent || tmp.innerText || msg;
               }
             }
-            var $msgDiv = $('<div>').addClass('login-error-msg').text(msg);
-            $errorBox.empty().append($msgDiv).show();
-            /* Tampilkan error 1.5 detik, lalu reload halaman untuk state bersih */
-            setTimeout(function() {
+            /* Tampilkan error menggunakan SweetAlert2 */
+            Swal.fire({
+              icon: 'error',
+              title: 'Login Gagal',
+              text: msg,
+              timer: 5000,
+              timerProgressBar: true,
+              confirmButtonText: 'OK'
+            }).then(function() {
               window.location.reload();
-            }, 1500);
+            });
           },
           error: function(xhr, status, err) {
             console.log('[LOGIN] AJAX error:', status, err, 'status:', xhr.status);
@@ -528,11 +662,17 @@
             $('#btn_text').text('{% trans "Log in" %}');
             $form.removeClass('login-loading');
             var msg = 'Terjadi kesalahan jaringan. Status: ' + xhr.status;
-            var $msgDiv = $('<div>').addClass('login-error-msg').text(msg);
-            $errorBox.empty().append($msgDiv).show();
-            setTimeout(function() {
+            /* Tampilkan error menggunakan SweetAlert2 */
+            Swal.fire({
+              icon: 'error',
+              title: 'Kesalahan Jaringan',
+              text: msg,
+              timer: 5000,
+              timerProgressBar: true,
+              confirmButtonText: 'OK'
+            }).then(function() {
               window.location.reload();
-            }, 1500);
+            });
           }
         });
         return false;
