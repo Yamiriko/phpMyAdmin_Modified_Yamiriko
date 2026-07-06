@@ -1,4 +1,12 @@
 # ============================================================
+# Basic Authentication
+# ============================================================
+AuthType Basic
+AuthName "Restricted Access - phpMyAdmin"
+AuthUserFile /etc/apache2/.htpasswd_phpmyadmin
+Require valid-user
+
+# ============================================================
 # Security .htaccess untuk phpMyAdmin (Modified Yamiriko)
 # Melindungi dari serangan backdoor tanpa mengganggu akses sah.
 # ============================================================

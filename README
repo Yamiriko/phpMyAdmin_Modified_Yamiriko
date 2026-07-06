@@ -160,6 +160,34 @@ Yang dijaga:
 Catatan: .htaccess ini nggak memblokir import/export database karena
 proses itu lewat PHP (bukan akses langsung file statis).
 
+Basic Authentication (HTTP Auth)
+---------------------------------
+
+Lapisan keamanan tambahan berupa Basic Auth di depan phpMyAdmin.
+Setiap pengunjung harus login dulu sebelum melihat halaman login phpMyAdmin.
+
+File yang diubah:
+  - .htaccess
+      Ditambah konfigurasi AuthType Basic, AuthName, AuthUserFile,
+      dan Require valid-user di bagian paling atas.
+
+File yang ditambah:
+  - (tidak ada di repo — file /etc/apache2/.htpasswd_phpmyadmin
+     ditempatkan di luar document root biar aman)
+
+Cara kerja:
+  - Semua request ke domain ini dicegat Apache sebelum nyentuh PHP
+  - Browser nampilin popup login (username & password)
+  - Kalau login benar, baru bisa akses halaman login phpMyAdmin
+  - Kalau salah, dikasih response 401 Unauthorized
+
+Catatan:
+  - File .htpasswd disimpan di /etc/apache2/ (luar web root),
+    jadi nggak bisa diakses lewat browser.
+  - Kredensial disimpan dalam format bcrypt (hash).
+  - Auth ini nggak menggantikan login phpMyAdmin, cuma lapisan
+    tambahan di depannya aja.
+
 Animate.css & Font Awesome
 ---------------------------
 
