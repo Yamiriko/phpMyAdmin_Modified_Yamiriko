@@ -84,14 +84,7 @@
           <i class="fas fa-lock"></i> {% trans 'Password:' %}
         </label>
         <div class="col-sm-8">
-          <div class="input-group">
-            <span class="input-group-text"><i class="fas fa-key"></i></span>
-            <input type="password" name="pma_password" id="input_password" value="" class="form-control" autocomplete="current-password" spellcheck="false">
-            <button type="button" id="toggle_password" class="btn btn-outline-secondary" title="Tampilkan/Sembunyikan password" tabindex="-1">
-              <i class="fas fa-eye" id="eye_open"></i>
-              <i class="fas fa-eye-slash" id="eye_closed" style="display:none"></i>
-            </button>
-          </div>
+          <input type="password" name="pma_password" id="input_password" value="" class="form-control" autocomplete="current-password" spellcheck="false">
         </div>
       </div>
 
@@ -200,13 +193,7 @@
   box-shadow: 0 2px 4px rgba(35, 90, 129, 0.2);
 }
 
-.input-group .btn-outline-secondary {
-  transition: all 0.2s ease;
-}
-.input-group .btn-outline-secondary:hover {
-  background: #e9ecef;
-  color: #333;
-}
+
 
 .pma-captcha-refresh {
   transition: all 0.25s ease;
@@ -321,20 +308,7 @@
 #input_go {
   min-width: 100px;
 }
-.input-group .form-control {
-  border-right: none;
-}
-.input-group .btn-outline-secondary {
-  border-left: none;
-  background: #fff;
-  color: #666;
-  border-color: #aaa;
-}
-.input-group-text {
-  background: #f8f9fa;
-  border-color: #aaa;
-  color: #235a81;
-}
+
 .card-header i {
   margin-right: 5px;
 }
@@ -460,20 +434,6 @@
   jQuery(function($) {
   'use strict';
   console.log('[LOGIN] jQuery version:', $.fn.jquery);
-
-  /* ====== TOGGLE SHOW/HIDE PASSWORD ====== */
-  $('#toggle_password').on('click', function() {
-    var $pwd = $('#input_password');
-    if ($pwd.attr('type') === 'password') {
-      $pwd.attr('type', 'text');
-      $('#eye_open').hide();
-      $('#eye_closed').show();
-    } else {
-      $pwd.attr('type', 'password');
-      $('#eye_open').show();
-      $('#eye_closed').hide();
-    }
-  });
 
   /* ====== CAPTCHA REFRESH via jQuery AJAX ====== */
   $('#btn_refresh_captcha').on('click', function() {

@@ -55,6 +55,28 @@ The phpMyAdmin team
                CATATAN MODIFIKASI - Fork oleh Yamiriko
 ================================================================================
 
+Hapus Basic Auth, Autentikasi Serahkan ke Server
+--------------------------------------------------
+
+Basic auth (browser popup) di phpMyAdmin dimatikan. Sekarang autentikasi
+diatur sepenuhnya oleh web server (Apache/Nginx) lewat .htaccess atau
+konfigurasi server. Kalau user nggak terautentikasi, mereka cuma dapat
+pesan error 401 — nggak ada lagi popup basic auth dari browser.
+
+Field password juga disederhanakan: icon key, tombol show/hide, dan
+wrapper input-group dihilangkan. Sekarang field password tampil sama
+persis dengan field username — plain form-control.
+
+File yang diubah:
+  - libraries/classes/Plugins/Auth/AuthenticationHttp.php
+      Hapus header WWW-Authenticate: Basic dan variabel realm_message.
+      Import `preg_replace` juga dihapus karena nggak dipakai lagi.
+
+  - templates/login/form.twig
+      Password field dari input-group jadi form-control biasa. Tombol
+      toggle show/hide password dan JS handler-nya dihapus. CSS buat
+      input-group-text dan .btn-outline-secondary juga dibuang.
+
 Tampilan Login dengan CAPTCHA Custom
 -------------------------------------
 

@@ -18,7 +18,6 @@ use function __;
 use function base64_decode;
 use function defined;
 use function hash_equals;
-use function preg_replace;
 use function sprintf;
 use function strcmp;
 use function strpos;
@@ -56,23 +55,8 @@ class AuthenticationHttp extends AuthenticationPlugin
      */
     public function authForm(): bool
     {
-        if (empty($GLOBALS['cfg']['Server']['auth_http_realm'])) {
-            if (empty($GLOBALS['cfg']['Server']['verbose'])) {
-                $server_message = $GLOBALS['cfg']['Server']['host'];
-            } else {
-                $server_message = $GLOBALS['cfg']['Server']['verbose'];
-            }
-
-            $realm_message = 'phpMyAdmin ' . $server_message;
-        } else {
-            $realm_message = $GLOBALS['cfg']['Server']['auth_http_realm'];
-        }
-
         $response = ResponseRenderer::getInstance();
 
-        // remove non US-ASCII to respect RFC2616
-        $realm_message = preg_replace('/[^\x20-\x7e]/i', '', $realm_message);
-        $response->header('WWW-Authenticate: Basic realm="' . $realm_message . '"');
         $response->setHttpResponseCode(401);
 
         /* HTML header */
